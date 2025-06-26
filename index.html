@@ -1,18 +1,15 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Női Foci EB 2025 Tippjáték - Admin + Játékos</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <style>
-    textarea { resize: vertical; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Női Foci EB 2025 Tippjáték</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen p-6">
-  <div class="max-w-5xl mx-auto space-y-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Női Foci EB 2025 Tippjáték</h1>
 
-    <h1 class="text-4xl font-bold mb-6 text-center">Női Foci EB 2025 Tippjáték</h1>
     <!-- 🔐 Admin belépés -->
     <div id="adminLogin" class="mb-6">
       <label for="adminPassword" class="block mb-2 font-semibold">Admin jelszó:</label>
@@ -21,432 +18,100 @@
       <p id="adminError" class="text-red-600 mt-2 hidden">Hibás jelszó!</p>
     </div>
 
+    <!-- 🔧 Admin panel (rejtve indul) -->
     <div id="adminPanel" class="hidden mb-6">
       <h2 class="text-2xl font-semibold mb-2">🔧 Admin szekció</h2>
       <p class="mb-4 text-gray-700">Itt lehet majd meccseket szerkeszteni (pl. új meccs hozzáadás).</p>
       <!-- Későbbi admin funkciók ide jönnek -->
     </div>
 
-
-    <!-- Admin szekció -->
-    <section id="adminSection" class="bg-white p-6 rounded shadow">
-      <h2 class="text-2xl font-semibold mb-4">Admin felület - Meccsek kezelése</h2>
-
-      <form id="matchForm" class="space-y-4">
-        <div class="grid grid-cols-12 gap-4 items-center">
-          <input type="text" id="team1Input" placeholder="Csapat 1" required class="col-span-3 border rounded p-2" />
-          <input type="text" id="team2Input" placeholder="Csapat 2" required class="col-span-3 border rounded p-2" />
-          <input type="datetime-local" id="dateInput" required class="col-span-3 border rounded p-2" />
-          <input type="text" id="resultInput" placeholder="Eredmény pl. 2-1 vagy üres" class="col-span-2 border rounded p-2" />
-          <select id="statusInput" class="col-span-1 border rounded p-2" required>
-            <option value="active">Aktív (tippelhető)</option>
-            <option value="closed">Lezárt (lezárva)</option>
-          </select>
-        </div>
-        <button type="submit" class="bg-green-600 text-white rounded py-2 px-4 hover:bg-green-700">Új meccs hozzáadása</button>
-      </form>
-
-      <h3 class="mt-6 text-xl font-semibold">Meccsek listája</h3>
-      <div id="matchesList" class="mt-2 max-h-64 overflow-auto border rounded p-2 bg-gray-50"></div>
-    </section>
-
-    <!-- Játékos szekció -->
-    <section id="playerSection" class="bg-white p-6 rounded shadow">
-      <h2 class="text-2xl font-semibold mb-4">Játékos felület</h2>
-
-      <div id="loginDiv" class="mb-6">
-        <label for="playerName" class="block font-semibold mb-2">Játékos név:</label>
-        <input type="text" id="playerName" class="border rounded p-2 w-full max-w-xs" placeholder="Írd be a neved..." />
-        <button id="loginBtn" class="mt-2 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Belépés</button>
-        <p id="loginError" class="text-red-600 mt-2 hidden">Kérlek, adj meg egy nevet!</p>
-      </div>
-
-      <div id="gameDiv" class="hidden">
-        <p class="mb-4">Üdv, <span id="currentPlayerName" class="font-semibold"></span>! Tippeld meg az aktív meccseket:</p>
-        <form id="tipForm" class="space-y-4"></form>
-        <button id="submitTipsBtn" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 mt-4">Tipp mentése</button>
-        <div id="tipResult" class="mt-6"></div>
-      </div>
-    </section>
-
-    <!-- Ranglista -->
-    <section id="leaderboardSection" class="bg-white p-6 rounded shadow">
-      <h2 class="text-2xl font-semibold mb-4">Ranglista</h2>
-      <ul id="leaderboard" class="list-disc pl-5"></ul>
-    </section>
-
+    <!-- Tipp form -->
+    <form id="tipForm" class="space-y-4"></form>
+    <div id="output" class="mt-6"></div>
   </div>
 
-<script>
-  // --- Előre feltöltött meccsek ---
-  const defaultMatches = [
-    { id: "m1", team1: "Svájc", team2: "Norvégia", date: "2025-07-02T21:00", result: null, status: "active" },
-    { id: "m2", team1: "Spanyolország", team2: "Portugália", date: "2025-07-03T21:00", result: null, status: "active" },
-    { id: "m3", team1: "Németország", team2: "Svédország", date: "2025-07-04T21:00", result: null, status: "active" },
-    { id: "m4", team1: "Anglia", team2: "Franciaország", date: "2025-07-05T21:00", result: null, status: "active" },
-  ];
+  <script>
+    const matches = [
+      { date: "2025.07.02. 21:00", team1: "Svájc", team2: "Norvégia", actual: [1, 2] },
+      { date: "2025.07.03. 21:00", team1: "Spanyolország", team2: "Portugália", actual: [3, 0] },
+      { date: "2025.07.04. 21:00", team1: "Németország", team2: "Svédország", actual: [2, 2] },
+      { date: "2025.07.05. 21:00", team1: "Anglia", team2: "Franciaország", actual: [1, 1] },
+    ];
 
-  // --- LocalStorage kulcsok ---
-  const LS_MATCHES_KEY = "noifoci_matches";
-  const LS_TIPS_KEY = "noifoci_tips"; // { playerName: { matchId: [tipp1, tipp2] } }
+    const form = document.getElementById("tipForm");
+    const output = document.getElementById("output");
 
-  // --- DOM elemek ---
-  const matchForm = document.getElementById("matchForm");
-  const team1Input = document.getElementById("team1Input");
-  const team2Input = document.getElementById("team2Input");
-  const dateInput = document.getElementById("dateInput");
-  const resultInput = document.getElementById("resultInput");
-  const statusInput = document.getElementById("statusInput");
-  const matchesList = document.getElementById("matchesList");
-
-  const loginDiv = document.getElementById("loginDiv");
-  const playerNameInput = document.getElementById("playerName");
-  const loginBtn = document.getElementById("loginBtn");
-  const loginError = document.getElementById("loginError");
-  const gameDiv = document.getElementById("gameDiv");
-  const currentPlayerNameSpan = document.getElementById("currentPlayerName");
-  const tipForm = document.getElementById("tipForm");
-  const submitTipsBtn = document.getElementById("submitTipsBtn");
-  const tipResult = document.getElementById("tipResult");
-  const leaderboard = document.getElementById("leaderboard");
-
-  // --- Segédfüggvények ---
-  function generateId() {
-    return '_' + Math.random().toString(36).substr(2, 9);
-  }
-
-  // --- Meccsek betöltése, előre feltöltés ha üres ---
-  function loadMatches() {
-    const raw = localStorage.getItem(LS_MATCHES_KEY);
-    if (!raw) {
-      // localStorage üres, betöltjük az alapértelmezett meccseket
-      saveMatches(defaultMatches);
-      return defaultMatches;
-    }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return [];
-    }
-  }
-
-  // Meccsek mentése
-  function saveMatches(matches) {
-    localStorage.setItem(LS_MATCHES_KEY, JSON.stringify(matches));
-  }
-
-  // Meccs hozzáadása
-  function addMatch(team1, team2, dateISO, resultStr, status) {
-    const matches = loadMatches();
-    let result = null;
-    if (resultStr.trim() !== "") {
-      const m = resultStr.trim().match(/^(\d+)\s*-\s*(\d+)$/);
-      if (m) {
-        result = [parseInt(m[1]), parseInt(m[2])];
-      }
-    }
-    matches.push({
-      id: generateId(),
-      team1,
-      team2,
-      date: dateISO,
-      result,
-      status
-    });
-    saveMatches(matches);
-  }
-
-  // Meccsek listázása admin felületen
-  function renderMatchesList() {
-    const matches = loadMatches();
-    if (matches.length === 0) {
-      matchesList.innerHTML = "<p>Nincsenek meccsek.</p>";
-      return;
-    }
-
-    matchesList.innerHTML = "";
-    matches.forEach((m) => {
+    matches.forEach((match, index) => {
       const div = document.createElement("div");
-      div.className = "flex items-center justify-between p-2 border-b";
-
-      const dateStr = new Date(m.date).toLocaleString();
-
-      const resStr = m.result ? `${m.result[0]} - ${m.result[1]}` : "Nincs eredmény";
-
-      div.innerHTML = `
-        <div class="flex space-x-4 items-center flex-wrap max-w-3xl">
-          <span class="font-semibold">${m.team1}</span>
-          <span>vs</span>
-          <span class="font-semibold">${m.team2}</span>
-          <span>• ${dateStr}</span>
-          <span class="ml-2">• Eredmény: ${resStr}</span>
-          <span class="ml-2 font-medium capitalize">• Státusz: ${m.status}</span>
-        </div>
-        <button class="text-red-600 hover:text-red-800 font-bold" data-id="${m.id}">Törlés</button>
-      `;
-
-      matchesList.appendChild(div);
-
-      // Törlés gomb esemény
-      div.querySelector("button").addEventListener("click", () => {
-        if (confirm(`Biztos törlöd a meccset: ${m.team1} vs ${m.team2}?`)) {
-          deleteMatch(m.id);
-        }
-      });
-    });
-  }
-
-  // Meccs törlése
-  function deleteMatch(id) {
-    let matches = loadMatches();
-    matches = matches.filter(m => m.id !== id);
-    saveMatches(matches);
-    renderMatchesList();
-    renderPlayerForm(); // frissítjük a játékos felületet is
-  }
-
-  // --- Tippelés kezelése ---
-
-  // Tipp adat betöltése localStorage-ból
-  // { playerName: { matchId: [tipp1, tipp2] } }
-  function loadTips() {
-    const raw = localStorage.getItem(LS_TIPS_KEY);
-    if (!raw) return {};
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return {};
-    }
-  }
-
-  // Tipp mentése localStorage-ba
-  function saveTips(tips) {
-    localStorage.setItem(LS_TIPS_KEY, JSON.stringify(tips));
-  }
-
-  // Egy játékos tippjeinek lekérése
-  function getPlayerTips(player) {
-    const tips = loadTips();
-    return tips[player] || {};
-  }
-
-  // Egy játékos tippjeinek mentése
-  function savePlayerTips(player, playerTips) {
-    const tips = loadTips();
-    tips[player] = playerTips;
-    saveTips(tips);
-  }
-
-  // --- Pontszámítás ---
-  function getPoints(pred1, pred2, act1, act2) {
-    if (pred1 === act1 && pred2 === act2) return 3;
-    if (
-      (pred1 > pred2 && act1 > act2) ||
-      (pred1 < pred2 && act1 < act2) ||
-      (pred1 === pred2 && act1 === act2)
-    ) return 1;
-    return 0;
-  }
-
-  // --- Admin form beküldése ---
-  matchForm.addEventListener("submit", e => {
-    e.preventDefault();
-    const team1 = team1Input.value.trim();
-    const team2 = team2Input.value.trim();
-    const dateISO = dateInput.value;
-    const resultStr = resultInput.value.trim();
-    const status = statusInput.value;
-
-    if (!team1 || !team2 || !dateISO) {
-      alert("Kérlek, tölts ki minden mezőt (eredmény lehet üres).");
-      return;
-    }
-
-    addMatch(team1, team2, dateISO, resultStr, status);
-    matchForm.reset();
-    renderMatchesList();
-    renderPlayerForm();
-  });
-
-  // --- Játékos bejelentkezés ---
-  let currentPlayer = null;
-
-  loginBtn.addEventListener("click", () => {
-    const name = playerNameInput.value.trim();
-    if (!name) {
-      loginError.classList.remove("hidden");
-      return;
-    }
-    loginError.classList.add("hidden");
-    currentPlayer = name;
-    loginDiv.classList.add("hidden");
-    gameDiv.classList.remove("hidden");
-    currentPlayerNameSpan.textContent = currentPlayer;
-    renderPlayerForm();
-    loadPlayerTipsAndShow();
-    renderLeaderboard();
-  });
-
-  // --- Játékos tippelési űrlap dinamikus megjelenítése ---
-  function renderPlayerForm() {
-    const matches = loadMatches();
-    tipForm.innerHTML = "";
-
-    // Csak az aktív meccsek jelennek meg tippelésre
-    const activeMatches = matches.filter(m => m.status === "active");
-
-    if (activeMatches.length === 0) {
-      tipForm.innerHTML = "<p class='italic text-gray-600'>Nincs aktív meccs tippelésre.</p>";
-      submitTipsBtn.disabled = true;
-      return;
-    }
-
-    submitTipsBtn.disabled = false;
-
-    activeMatches.forEach((m, i) => {
-      const div = document.createElement("div");
-      div.className = "bg-gray-50 rounded p-4 mb-4 shadow";
+      div.className = "bg-white rounded shadow p-4";
 
       div.innerHTML = `
         <div class="flex justify-between mb-2">
-          <span class="font-semibold">${m.team1} vs ${m.team2}</span>
-          <span class="text-sm text-gray-500">${new Date(m.date).toLocaleString()}</span>
+          <span class="font-semibold">${match.team1} vs ${match.team2}</span>
+          <span class="text-sm text-gray-500">${match.date}</span>
         </div>
         <div class="flex space-x-2">
-          <input type="number" min="0" placeholder="${m.team1}" class="border rounded p-2 w-20" name="tip_${m.id}_team1" />
+          <input type="number" min="0" placeholder="${match.team1}" class="border rounded p-2 w-20" name="match${index}_team1">
           <span class="self-center">-</span>
-          <input type="number" min="0" placeholder="${m.team2}" class="border rounded p-2 w-20" name="tip_${m.id}_team2" />
+          <input type="number" min="0" placeholder="${match.team2}" class="border rounded p-2 w-20" name="match${index}_team2">
         </div>
       `;
-      tipForm.appendChild(div);
+
+      form.appendChild(div);
     });
 
-    fillPlayerTipsInputs();
-  }
+    const submitBtn = document.createElement("button");
+    submitBtn.type = "submit";
+    submitBtn.className = "bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded";
+    submitBtn.textContent = "Tipp mentése";
+    form.appendChild(submitBtn);
 
-  // Kitölti a játékos tippjeit az inputokba
-  function fillPlayerTipsInputs() {
-    if (!currentPlayer) return;
-    const playerTips = getPlayerTips(currentPlayer);
-    for (const matchId in playerTips) {
-      const inputs = [
-        tipForm.querySelector(`[name="tip_${matchId}_team1"]`),
-        tipForm.querySelector(`[name="tip_${matchId}_team2"]`)
-      ];
-      if (inputs[0]) inputs[0].value = playerTips[matchId][0] ?? "";
-      if (inputs[1]) inputs[1].value = playerTips[matchId][1] ?? "";
-    }
-  }
-
-  // Betölti a játékos tippjeit és megjeleníti az eredményt
-  function loadPlayerTipsAndShow() {
-    if (!currentPlayer) return;
-    const playerTips = getPlayerTips(currentPlayer);
-    const matches = loadMatches();
-
-    let results = [];
-    let totalPoints = 0;
-
-    matches.forEach(m => {
-      const tip = playerTips[m.id];
-      if (tip && tip.length === 2 && m.result) {
-        const pts = getPoints(tip[0], tip[1], m.result[0], m.result[1]);
-        totalPoints += pts;
-        results.push(`${m.team1} ${tip[0]} - ${tip[1]} ${m.team2} → Pont: ${pts}`);
-      }
-    });
-
-    if (results.length === 0) {
-      tipResult.innerHTML = "<p class='italic text-gray-600'>Még nem adtál meg tippet vagy nincs lezárt meccs eredmény.</p>";
-    } else {
-      tipResult.innerHTML = `
-        <h3 class="text-xl font-semibold mb-2">Eredményeid:</h3>
-        <ul class="list-disc pl-5 mb-4">${results.map(r => `<li>${r}</li>`).join("")}</ul>
-        <div class="text-lg font-bold">Összpontszám: ${totalPoints} pont</div>
-      `;
-    }
-  }
-
-  // Tipp mentése
-  submitTipsBtn.addEventListener("click", () => {
-    if (!currentPlayer) return;
-
-    const matches = loadMatches();
-    const playerTips = getPlayerTips(currentPlayer);
-
-    // Csak az aktív meccsekre tippelünk
-    const activeMatches = matches.filter(m => m.status === "active");
-
-    activeMatches.forEach(m => {
-      const input1 = tipForm.querySelector(`[name="tip_${m.id}_team1"]`);
-      const input2 = tipForm.querySelector(`[name="tip_${m.id}_team2"]`);
-
-      const val1 = input1 ? parseInt(input1.value) : null;
-      const val2 = input2 ? parseInt(input2.value) : null;
-
-      if (!isNaN(val1) && !isNaN(val2)) {
-        playerTips[m.id] = [val1, val2];
+    function getPoints(pred1, pred2, act1, act2) {
+      if (pred1 === act1 && pred2 === act2) {
+        return 3;
+      } else if ((pred1 > pred2 && act1 > act2) || (pred1 < pred2 && act1 < act2) || (pred1 === pred2 && act1 === act2)) {
+        return 1;
       } else {
-        delete playerTips[m.id];
+        return 0;
       }
-    });
+    }
 
-    savePlayerTips(currentPlayer, playerTips);
-    loadPlayerTipsAndShow();
-    renderLeaderboard();
-  });
-
-  // Ranglista megjelenítése
-  function renderLeaderboard() {
-    const tips = loadTips();
-    const matches = loadMatches();
-
-    const scores = [];
-
-    for (const player in tips) {
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      let results = [];
       let totalPoints = 0;
-      const playerTips = tips[player];
 
-      matches.forEach(m => {
-        const tip = playerTips[m.id];
-        if (tip && tip.length === 2 && m.result) {
-          totalPoints += getPoints(tip[0], tip[1], m.result[0], m.result[1]);
+      matches.forEach((match, index) => {
+        const team1 = parseInt(form[`match${index}_team1`].value);
+        const team2 = parseInt(form[`match${index}_team2`].value);
+        const [act1, act2] = match.actual;
+
+        if (!isNaN(team1) && !isNaN(team2)) {
+          const pts = getPoints(team1, team2, act1, act2);
+          totalPoints += pts;
+          results.push(`${match.team1} ${team1} - ${team2} ${match.team2} → Pont: ${pts}`);
+        } else {
+          results.push(`${match.team1} vs ${match.team2}: nincs teljes tipp`);
         }
       });
 
-      scores.push({ player, points: totalPoints });
-    }
-
-    scores.sort((a, b) => b.points - a.points);
-
-    leaderboard.innerHTML = "";
-
-    if (scores.length === 0) {
-      leaderboard.innerHTML = "<li class='italic'>Még nincs tippelő játékos.</li>";
-      return;
-    }
-
-    scores.forEach(s => {
-      const li = document.createElement("li");
-      li.textContent = `${s.player}: ${s.points} pont`;
-      leaderboard.appendChild(li);
+      output.innerHTML = `
+        <h2 class="text-xl font-semibold mb-2">Tippjeid:</h2>
+        <ul class="list-disc pl-5 mb-4">${results.map(r => `<li>${r}</li>`).join("")}</ul>
+        <div class="text-lg font-bold">Összpontszám: ${totalPoints} pont</div>
+      `;
     });
-  }
 
-  // --- Inicializálás ---
-  renderMatchesList();
-  renderLeaderboard();
-  function checkAdminPassword() {
-    const input = document.getElementById("adminPassword").value;
-    const error = document.getElementById("adminError");
-    if (input === "admin123") {
-      document.getElementById("adminLogin").classList.add("hidden");
-      document.getElementById("adminPanel").classList.remove("hidden");
-    } else {
-      error.classList.remove("hidden");
+    function checkAdminPassword() {
+      const input = document.getElementById("adminPassword").value;
+      const error = document.getElementById("adminError");
+      if (input === "admin123") {
+        document.getElementById("adminLogin").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+      } else {
+        error.classList.remove("hidden");
+      }
     }
-  }
-
-</script>
+  </script>
 </body>
 </html>
