@@ -1,33 +1,64 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Női Foci EB 2025 Tippjáték</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Női Foci EB 2025 Tippjáték - Több játékos</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 </head>
 <body class="bg-gray-100 min-h-screen p-6">
   <div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Női Foci EB 2025 Tippjáték</h1>
+    <h1 class="text-3xl font-bold mb-6">Női Foci EB 2025 Tippjáték - Több játékos</h1>
 
     <!-- 🔐 Admin belépés -->
     <div id="adminLogin" class="mb-6">
       <label for="adminPassword" class="block mb-2 font-semibold">Admin jelszó:</label>
-      <input id="adminPassword" type="password" placeholder="Írd be a jelszót" class="border p-2 rounded w-64">
-      <button onclick="checkAdminPassword()" class="bg-blue-600 text-white px-4 py-2 rounded ml-2">Belépés</button>
+      <input
+        id="adminPassword"
+        type="password"
+        placeholder="Írd be a jelszót"
+        class="border p-2 rounded w-64"
+      />
+      <button
+        onclick="checkAdminPassword()"
+        class="bg-blue-600 text-white px-4 py-2 rounded ml-2"
+      >
+        Belépés
+      </button>
       <p id="adminError" class="text-red-600 mt-2 hidden">Hibás jelszó!</p>
     </div>
 
     <!-- 🔧 Admin panel (rejtve indul) -->
     <div id="adminPanel" class="hidden mb-6">
       <h2 class="text-2xl font-semibold mb-2">🔧 Admin szekció</h2>
-      <p class="mb-4 text-gray-700">Itt lehet majd meccseket szerkeszteni (pl. új meccs hozzáadás).</p>
+      <p class="mb-4 text-gray-700">
+        Itt lehet majd meccseket szerkeszteni (pl. új meccs hozzáadás).
+      </p>
       <!-- Későbbi admin funkciók ide jönnek -->
     </div>
 
+    <!-- Játékosnév beviteli mező -->
+    <div class="mb-6">
+      <label for="playerName" class="block mb-2 font-semibold">Játékos neve:</label>
+      <input
+        id="playerName"
+        type="text"
+        placeholder="Add meg a neved"
+        class="border p-2 rounded w-64"
+      />
+    </div>
+
     <!-- Tipp form -->
-    <form id="tipForm" class="space-y-4"></form>
+    <form id="tipForm" class="space-y-4">
+      <!-- Meccsek inputjai ide jönnek -->
+    </form>
     <div id="output" class="mt-6"></div>
+
+    <!-- Toplista -->
+    <div id="leaderboard" class="mt-10 bg-white rounded shadow p-4 hidden">
+      <h2 class="text-2xl font-semibold mb-4">🏆 Toplista</h2>
+      <ul id="leaderboardList" class="list-disc pl-5"></ul>
+    </div>
   </div>
 
   <script>
@@ -40,68 +71,128 @@
 
     const form = document.getElementById("tipForm");
     const output = document.getElementById("output");
+    const leaderboard = document.getElementById("leaderboard");
+    const leaderboardList = document.getElementById("leaderboardList");
+    const playerNameInput = document.getElementById("playerName");
 
-    matches.forEach((match, index) => {
-      const div = document.createElement("div");
-      div.className = "bg-white rounded shadow p-4";
+    // Játéktér építése
+    function buildForm() {
+      matches.forEach((match, index) => {
+        const div = document.createElement("div");
+        div.className = "bg-white rounded shadow p-4";
 
-      div.innerHTML = `
-        <div class="flex justify-between mb-2">
-          <span class="font-semibold">${match.team1} vs ${match.team2}</span>
-          <span class="text-sm text-gray-500">${match.date}</span>
-        </div>
-        <div class="flex space-x-2">
-          <input type="number" min="0" placeholder="${match.team1}" class="border rounded p-2 w-20" name="match${index}_team1">
-          <span class="self-center">-</span>
-          <input type="number" min="0" placeholder="${match.team2}" class="border rounded p-2 w-20" name="match${index}_team2">
-        </div>
-      `;
+        div.innerHTML = `
+          <div class="flex justify-between mb-2">
+            <span class="font-semibold">${match.team1} vs ${match.team2}</span>
+            <span class="text-sm text-gray-500">${match.date}</span>
+          </div>
+          <div class="flex space-x-2">
+            <input
+              type="number"
+              min="0"
+              placeholder="${match.team1}"
+              class="border rounded p-2 w-20"
+              name="match${index}_team1"
+              required
+            />
+            <span class="self-center">-</span>
+            <input
+              type="number"
+              min="0"
+              placeholder="${match.team2}"
+              class="border rounded p-2 w-20"
+              name="match${index}_team2"
+              required
+            />
+          </div>
+        `;
 
-      form.appendChild(div);
-    });
+        form.appendChild(div);
+      });
 
-    const submitBtn = document.createElement("button");
-    submitBtn.type = "submit";
-    submitBtn.className = "bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded";
-    submitBtn.textContent = "Tipp mentése";
-    form.appendChild(submitBtn);
+      const submitBtn = document.createElement("button");
+      submitBtn.type = "submit";
+      submitBtn.className = "bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded";
+      submitBtn.textContent = "Tipp mentése";
+      form.appendChild(submitBtn);
+    }
 
+    // Pontozás logika
     function getPoints(pred1, pred2, act1, act2) {
       if (pred1 === act1 && pred2 === act2) {
         return 3;
-      } else if ((pred1 > pred2 && act1 > act2) || (pred1 < pred2 && act1 < act2) || (pred1 === pred2 && act1 === act2)) {
+      } else if (
+        (pred1 > pred2 && act1 > act2) ||
+        (pred1 < pred2 && act1 < act2) ||
+        (pred1 === pred2 && act1 === act2)
+      ) {
         return 1;
       } else {
         return 0;
       }
     }
 
-    form.addEventListener("submit", function(e) {
+    // Eredmények és pontok mentése localStorage-be játékosnévvel
+    function saveResult(player, totalPoints) {
+      if (!player) return;
+      const results = JSON.parse(localStorage.getItem("fociTippekResults") || "{}");
+      results[player] = totalPoints;
+      localStorage.setItem("fociTippekResults", JSON.stringify(results));
+    }
+
+    // Toplista kirajzolása
+    function renderLeaderboard() {
+      const results = JSON.parse(localStorage.getItem("fociTippekResults") || "{}");
+      const entries = Object.entries(results);
+      if (entries.length === 0) {
+        leaderboard.classList.add("hidden");
+        return;
+      }
+      leaderboard.classList.remove("hidden");
+
+      // Csökkenő sorrend pontszám alapján
+      entries.sort((a, b) => b[1] - a[1]);
+
+      leaderboardList.innerHTML = entries
+        .map(([name, points]) => `<li><strong>${name}</strong>: ${points} pont</li>`)
+        .join("");
+    }
+
+    // Tipp beküldése
+    form.addEventListener("submit", function (e) {
       e.preventDefault();
-      let results = [];
+
+      const player = playerNameInput.value.trim();
+      if (!player) {
+        alert("Kérlek, add meg a neved!");
+        playerNameInput.focus();
+        return;
+      }
+
       let totalPoints = 0;
+      let results = [];
 
       matches.forEach((match, index) => {
         const team1 = parseInt(form[`match${index}_team1`].value);
         const team2 = parseInt(form[`match${index}_team2`].value);
         const [act1, act2] = match.actual;
 
-        if (!isNaN(team1) && !isNaN(team2)) {
-          const pts = getPoints(team1, team2, act1, act2);
-          totalPoints += pts;
-          results.push(`${match.team1} ${team1} - ${team2} ${match.team2} → Pont: ${pts}`);
-        } else {
-          results.push(`${match.team1} vs ${match.team2}: nincs teljes tipp`);
-        }
+        const pts = getPoints(team1, team2, act1, act2);
+        totalPoints += pts;
+        results.push(`${match.team1} ${team1} - ${team2} ${match.team2} → Pont: ${pts}`);
       });
 
       output.innerHTML = `
-        <h2 class="text-xl font-semibold mb-2">Tippjeid:</h2>
-        <ul class="list-disc pl-5 mb-4">${results.map(r => `<li>${r}</li>`).join("")}</ul>
+        <h2 class="text-xl font-semibold mb-2">Tippjeid (${player}):</h2>
+        <ul class="list-disc pl-5 mb-4">${results.map((r) => `<li>${r}</li>`).join("")}</ul>
         <div class="text-lg font-bold">Összpontszám: ${totalPoints} pont</div>
       `;
+
+      saveResult(player, totalPoints);
+      renderLeaderboard();
     });
 
+    // Admin jelszó ellenőrzése
     function checkAdminPassword() {
       const input = document.getElementById("adminPassword").value;
       const error = document.getElementById("adminError");
@@ -112,6 +203,10 @@
         error.classList.remove("hidden");
       }
     }
+
+    // Inicializálás
+    buildForm();
+    renderLeaderboard();
   </script>
 </body>
 </html>
