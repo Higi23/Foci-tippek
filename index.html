@@ -13,6 +13,20 @@
   <div class="max-w-5xl mx-auto space-y-8">
 
     <h1 class="text-4xl font-bold mb-6 text-center">Női Foci EB 2025 Tippjáték</h1>
+    <!-- 🔐 Admin belépés -->
+    <div id="adminLogin" class="mb-6">
+      <label for="adminPassword" class="block mb-2 font-semibold">Admin jelszó:</label>
+      <input id="adminPassword" type="password" placeholder="Írd be a jelszót" class="border p-2 rounded w-64">
+      <button onclick="checkAdminPassword()" class="bg-blue-600 text-white px-4 py-2 rounded ml-2">Belépés</button>
+      <p id="adminError" class="text-red-600 mt-2 hidden">Hibás jelszó!</p>
+    </div>
+
+    <div id="adminPanel" class="hidden mb-6">
+      <h2 class="text-2xl font-semibold mb-2">🔧 Admin szekció</h2>
+      <p class="mb-4 text-gray-700">Itt lehet majd meccseket szerkeszteni (pl. új meccs hozzáadás).</p>
+      <!-- Későbbi admin funkciók ide jönnek -->
+    </div>
+
 
     <!-- Admin szekció -->
     <section id="adminSection" class="bg-white p-6 rounded shadow">
@@ -422,6 +436,16 @@
   // --- Inicializálás ---
   renderMatchesList();
   renderLeaderboard();
+  function checkAdminPassword() {
+    const input = document.getElementById("adminPassword").value;
+    const error = document.getElementById("adminError");
+    if (input === "admin123") {
+      document.getElementById("adminLogin").classList.add("hidden");
+      document.getElementById("adminPanel").classList.remove("hidden");
+    } else {
+      error.classList.remove("hidden");
+    }
+  }
 
 </script>
 </body>
