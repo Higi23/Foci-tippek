@@ -103,8 +103,8 @@
       if (!user) return;
       let total = 0;
       matches.forEach((m, i) => {
-        const p1 = parseInt(form[`match${i}_team1`].value);
-        const p2 = parseInt(form[`match${i}_team2`].value);
+        const p1 = parseInt(form.elements[`match${i}_team1`].value);
+        const p2 = parseInt(form.elements[`match${i}_team2`].value);
         total += getPoints(p1, p2, m.actual[0], m.actual[1]);
       });
       await db.collection("tippek").doc(user.uid).set({ email: user.email, points: total });
