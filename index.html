@@ -2,66 +2,58 @@
 <html lang="hu">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Női Foci EB 2025 Tippjáték - Több játékos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foci Tippek - Firebase verzió</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-6">
-  <div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Női Foci EB 2025 Tippjáték - Több játékos</h1>
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Foci Tippek 2025 - Bejelentkezés</h1>
 
-    <!-- 🔐 Admin belépés -->
-    <div id="adminLogin" class="mb-6">
-      <label for="adminPassword" class="block mb-2 font-semibold">Admin jelszó:</label>
-      <input
-        id="adminPassword"
-        type="password"
-        placeholder="Írd be a jelszót"
-        class="border p-2 rounded w-64"
-      />
-      <button
-        onclick="checkAdminPassword()"
-        class="bg-blue-600 text-white px-4 py-2 rounded ml-2"
-      >
-        Belépés
-      </button>
-      <p id="adminError" class="text-red-600 mt-2 hidden">Hibás jelszó!</p>
-    </div>
-
-    <!-- 🔧 Admin panel (rejtve indul) -->
-    <div id="adminPanel" class="hidden mb-6">
-      <h2 class="text-2xl font-semibold mb-2">🔧 Admin szekció</h2>
-      <p class="mb-4 text-gray-700">
-        Itt lehet majd meccseket szerkeszteni (pl. új meccs hozzáadás).
-      </p>
-      <!-- Későbbi admin funkciók ide jönnek -->
-    </div>
-
-    <!-- Játékosnév beviteli mező -->
-    <div class="mb-6">
-      <label for="playerName" class="block mb-2 font-semibold">Játékos neve:</label>
-      <input
-        id="playerName"
-        type="text"
-        placeholder="Add meg a neved"
-        class="border p-2 rounded w-64"
-      />
+    <!-- 🔐 Auth UI -->
+    <div id="authSection" class="mb-6">
+      <input type="email" id="email" placeholder="Email" class="border p-2 rounded mb-2 w-full" />
+      <input type="password" id="password" placeholder="Jelszó" class="border p-2 rounded mb-2 w-full" />
+      <div class="flex space-x-2">
+        <button onclick="login()" class="bg-blue-600 text-white px-4 py-2 rounded">Bejelentkezés</button>
+        <button onclick="register()" class="bg-green-600 text-white px-4 py-2 rounded">Regisztráció</button>
+        <button onclick="logout()" class="bg-gray-500 text-white px-4 py-2 rounded">Kijelentkezés</button>
+      </div>
+      <p id="authMessage" class="mt-2 text-sm text-red-600"></p>
     </div>
 
     <!-- Tipp form -->
-    <form id="tipForm" class="space-y-4">
-      <!-- Meccsek inputjai ide jönnek -->
+    <form id="tipForm" class="space-y-4 hidden">
+      <h2 class="text-2xl font-semibold mb-2">⚽ Tippjeid</h2>
+      <!-- Meccsek itt -->
     </form>
-    <div id="output" class="mt-6"></div>
+    <div id="output" class="mt-4"></div>
 
     <!-- Toplista -->
-    <div id="leaderboard" class="mt-10 bg-white rounded shadow p-4 hidden">
-      <h2 class="text-2xl font-semibold mb-4">🏆 Toplista</h2>
+    <div id="leaderboard" class="mt-10 hidden bg-white p-4 rounded shadow">
+      <h2 class="text-xl font-semibold mb-2">🏆 Toplista</h2>
       <ul id="leaderboardList" class="list-disc pl-5"></ul>
     </div>
   </div>
 
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsP9gTAyIBmTv5DE30fp8iob4YhXZuw_I",
+      authDomain: "foci-tippek.firebaseapp.com",
+      databaseURL: "https://foci-tippek-default-rtdb.firebaseio.com",
+      projectId: "foci-tippek",
+      storageBucket: "foci-tippek.firebasestorage.app",
+      messagingSenderId: "187001151852",
+      appId: "1:187001151852:web:3ab1fa382a4fab9ff55349"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
     const matches = [
       { date: "2025.07.02. 21:00", team1: "Svájc", team2: "Norvégia", actual: [1, 2] },
       { date: "2025.07.03. 21:00", team1: "Spanyolország", team2: "Portugália", actual: [3, 0] },
@@ -73,140 +65,100 @@
     const output = document.getElementById("output");
     const leaderboard = document.getElementById("leaderboard");
     const leaderboardList = document.getElementById("leaderboardList");
-    const playerNameInput = document.getElementById("playerName");
+    const authMessage = document.getElementById("authMessage");
 
-    // Játéktér építése
     function buildForm() {
+      form.innerHTML = '';
       matches.forEach((match, index) => {
         const div = document.createElement("div");
         div.className = "bg-white rounded shadow p-4";
-
         div.innerHTML = `
           <div class="flex justify-between mb-2">
             <span class="font-semibold">${match.team1} vs ${match.team2}</span>
             <span class="text-sm text-gray-500">${match.date}</span>
           </div>
           <div class="flex space-x-2">
-            <input
-              type="number"
-              min="0"
-              placeholder="${match.team1}"
-              class="border rounded p-2 w-20"
-              name="match${index}_team1"
-              required
-            />
+            <input type="number" min="0" placeholder="${match.team1}" class="border rounded p-2 w-20" name="match${index}_team1" required />
             <span class="self-center">-</span>
-            <input
-              type="number"
-              min="0"
-              placeholder="${match.team2}"
-              class="border rounded p-2 w-20"
-              name="match${index}_team2"
-              required
-            />
-          </div>
-        `;
-
+            <input type="number" min="0" placeholder="${match.team2}" class="border rounded p-2 w-20" name="match${index}_team2" required />
+          </div>`;
         form.appendChild(div);
       });
-
-      const submitBtn = document.createElement("button");
-      submitBtn.type = "submit";
-      submitBtn.className = "bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded";
-      submitBtn.textContent = "Tipp mentése";
-      form.appendChild(submitBtn);
+      const btn = document.createElement("button");
+      btn.type = "submit";
+      btn.className = "bg-blue-600 text-white px-4 py-2 rounded";
+      btn.textContent = "Tipp mentése";
+      form.appendChild(btn);
     }
 
-    // Pontozás logika
-    function getPoints(pred1, pred2, act1, act2) {
-      if (pred1 === act1 && pred2 === act2) {
-        return 3;
-      } else if (
-        (pred1 > pred2 && act1 > act2) ||
-        (pred1 < pred2 && act1 < act2) ||
-        (pred1 === pred2 && act1 === act2)
-      ) {
-        return 1;
-      } else {
-        return 0;
-      }
+    function getPoints(p1, p2, a1, a2) {
+      if (p1 === a1 && p2 === a2) return 3;
+      if ((p1 > p2 && a1 > a2) || (p1 < p2 && a1 < a2) || (p1 === p2 && a1 === a2)) return 1;
+      return 0;
     }
 
-    // Eredmények és pontok mentése localStorage-be játékosnévvel
-    function saveResult(player, totalPoints) {
-      if (!player) return;
-      const results = JSON.parse(localStorage.getItem("fociTippekResults") || "{}");
-      results[player] = totalPoints;
-      localStorage.setItem("fociTippekResults", JSON.stringify(results));
-    }
-
-    // Toplista kirajzolása
-    function renderLeaderboard() {
-      const results = JSON.parse(localStorage.getItem("fociTippekResults") || "{}");
-      const entries = Object.entries(results);
-      if (entries.length === 0) {
-        leaderboard.classList.add("hidden");
-        return;
-      }
-      leaderboard.classList.remove("hidden");
-
-      // Csökkenő sorrend pontszám alapján
-      entries.sort((a, b) => b[1] - a[1]);
-
-      leaderboardList.innerHTML = entries
-        .map(([name, points]) => `<li><strong>${name}</strong>: ${points} pont</li>`)
-        .join("");
-    }
-
-    // Tipp beküldése
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-
-      const player = playerNameInput.value.trim();
-      if (!player) {
-        alert("Kérlek, add meg a neved!");
-        playerNameInput.focus();
-        return;
-      }
-
-      let totalPoints = 0;
-      let results = [];
-
-      matches.forEach((match, index) => {
-        const team1 = parseInt(form[`match${index}_team1`].value);
-        const team2 = parseInt(form[`match${index}_team2`].value);
-        const [act1, act2] = match.actual;
-
-        const pts = getPoints(team1, team2, act1, act2);
-        totalPoints += pts;
-        results.push(`${match.team1} ${team1} - ${team2} ${match.team2} → Pont: ${pts}`);
+      const user = auth.currentUser;
+      if (!user) return;
+      let total = 0;
+      matches.forEach((m, i) => {
+        const p1 = parseInt(form[`match${i}_team1`].value);
+        const p2 = parseInt(form[`match${i}_team2`].value);
+        total += getPoints(p1, p2, m.actual[0], m.actual[1]);
       });
-
-      output.innerHTML = `
-        <h2 class="text-xl font-semibold mb-2">Tippjeid (${player}):</h2>
-        <ul class="list-disc pl-5 mb-4">${results.map((r) => `<li>${r}</li>`).join("")}</ul>
-        <div class="text-lg font-bold">Összpontszám: ${totalPoints} pont</div>
-      `;
-
-      saveResult(player, totalPoints);
+      await db.collection("tippek").doc(user.uid).set({ email: user.email, points: total });
+      output.innerHTML = `<p class="mt-4 text-lg font-semibold">Pontjaid: ${total} pont</p>`;
       renderLeaderboard();
     });
 
-    // Admin jelszó ellenőrzése
-    function checkAdminPassword() {
-      const input = document.getElementById("adminPassword").value;
-      const error = document.getElementById("adminError");
-      if (input === "admin123") {
-        document.getElementById("adminLogin").classList.add("hidden");
-        document.getElementById("adminPanel").classList.remove("hidden");
-      } else {
-        error.classList.remove("hidden");
-      }
+    async function renderLeaderboard() {
+      const snap = await db.collection("tippek").get();
+      const list = [];
+      snap.forEach(doc => list.push(doc.data()));
+      list.sort((a, b) => b.points - a.points);
+      leaderboardList.innerHTML = list.map(u => `<li>${u.email} - ${u.points} pont</li>`).join("");
+      leaderboard.classList.remove("hidden");
     }
 
-    // Inicializálás
-    buildForm();
-    renderLeaderboard();
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          authMessage.textContent = "Sikeres bejelentkezés!";
+        })
+        .catch(err => authMessage.textContent = err.message);
+    }
+
+    function register() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => {
+          authMessage.textContent = "Sikeres regisztráció!";
+        })
+        .catch(err => authMessage.textContent = err.message);
+    }
+
+    function logout() {
+      auth.signOut();
+      document.getElementById("tipForm").classList.add("hidden");
+      document.getElementById("output").innerHTML = "";
+      leaderboard.classList.add("hidden");
+      authMessage.textContent = "Kijelentkeztél.";
+    }
+
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        buildForm();
+        form.classList.remove("hidden");
+        renderLeaderboard();
+      } else {
+        form.classList.add("hidden");
+        leaderboard.classList.add("hidden");
+      }
+    });
   </script>
 </body>
 </html>
